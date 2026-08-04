@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendario · Tareas y Horario (Nube)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #121212;
+    --bg-panel: #1a1a1a;
+    --bg-elevated: #212121;
+    --bg-hover: #262626;
+    --border: rgba(255,255,255,0.07);
+    --border-strong: rgba(255,255,255,0.14);
+    --text: #edecea;
+    --text-secondary: #9a9a9a;
+    --text-tertiary: #636363;
+    --accent: #7c8cf8;
+    --accent-soft: rgba(124,140,248,0.16);
+    --amber: #f2b84b;
+    --amber-soft: rgba(242,184,75,0.18);
+    --danger: #f0788a;
+    --danger-soft: rgba(240,120,138,0.15);
+    --success: #4ade80;
+    --success-soft: rgba(74,222,128,0.15);
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 7px;
+    --shadow: 0 20px 45px rgba(0,0,0,0.45);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  body{
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  button, input, select{ font-family: inherit; }
+
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background: transparent; }
+  ::-webkit-scrollbar-thumb{ background: var(--border-strong); border-radius: 4px; }
+
+  button:focus-visible, input:focus-visible, select:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    background: rgba(18,18,18,0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand{
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cloud-status {
+    font-size: 11.5px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--amber);
+  }
+  .status-dot.online { background: var(--success); }
+
+  /* ---------- Banner de Próxima Clase ---------- */
+  .next-class-banner {
+    background: linear-gradient(90deg, rgba(124,140,248,0.12) 0%, rgba(59,130,246,0.12) 100%);
+    border: 1px solid rgba(124,140,248,0.25);
+    border-radius: var(--radius-md);
+    padding: 12px 18px;
+    margin: 20px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .next-class-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .next-class-text strong {
+    color: var(--accent);
+  }
+
+  /* ---------- Main / Layout ---------- */
+  main{
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 64px;
+  }
+
+  .calendar-nav{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 24px 0 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .month-title{
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    text-transform: capitalize;
+  }
+
+  .nav-controls{ display: flex; align-items: center; gap: 6px; }
+
+  .view-selector {
+    display: flex;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+  }
+  .view-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 5px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .view-btn.active {
+    background: var(--bg-hover);
+    color: var(--text);
+  }
+
+  .icon-btn, .text-btn{
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .icon-btn{
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; line-height: 1;
+  }
+  .text-btn{ padding: 0 13px; height: 32px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .icon-btn:hover, .text-btn:hover{
+    background: var(--bg-hover); color: var(--text); border-color: var(--border-strong);
+  }
+
+  .calendar-card{
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    margin-bottom: 24px;
+  }
+
+  .weekday-row{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 2px 4px 12px;
+    text-align: center;
+  }
+  .weekday-row span{
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  .days-grid{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .day-cell{
+    position: relative;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 8px;
+    min-height: 66px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    cursor: pointer;
+    color: var(--text);
+    text-align: left;
+    transition: background .15s ease;
+  }
+  .day-cell:hover{ background: var(--bg-hover); }
+
+  .day-cell.other-month{ color: var(--text-tertiary); }
+  .day-cell.other-month:hover{ background: var(--bg-elevated); }
+
+  .day-num{
+    font-size: 13px;
+    font-weight: 500;
+    width: 25px; height: 25px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+  }
+
+  .day-cell.is-today .day-num{
+    background: var(--accent);
+    color: #101014;
+    font-weight: 700;
+  }
+
+  .task-dot{
+    position: absolute;
+    bottom: 10px;
+    left: 13px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .task-dot.pending{ background: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+  .task-dot.done{ background: var(--text-tertiary); }
+
+  /* ---------- Dashboard Grid (Schedule + Priorities) ---------- */
+  .dashboard-grid{
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .dashboard-card{
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+  }
+  
+  .card-header-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .dashboard-card h2{
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .task-filter-select {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+  }
+  .task-filter-select:focus { border-color: var(--accent); }
+
+  /* ---------- Schedule Table ---------- */
+  .table-responsive {
+    overflow-x: auto;
+  }
+  .schedule-table{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .schedule-table th{
+    text-align: center;
+    padding: 0 6px 10px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .schedule-table td{
+    padding: 5px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    vertical-align: middle;
+  }
+  .time-cell{
+    color: var(--text-tertiary);
+    font-size: 11.5px;
+    white-space: nowrap;
+    font-weight: 500;
+    padding-right: 4px !important;
+  }
+  .recess-row td{
+    color: var(--text-tertiary);
+    font-style: italic;
+    background: rgba(255,255,255,0.02);
+    font-size: 12px;
+    padding: 7px;
+  }
+  .subject-cell{
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 3px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all .2s ease;
+  }
+  
+  .subject-cell.current-class {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.18);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.35);
+  }
+  .subject-cell.current-class .subject-input {
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(18, 18, 18, 0.7);
+  }
+
+  .subject-input{
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 6px;
+    color: var(--text);
+    font-size: 12.5px;
+    text-align: center;
+    outline: none;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .subject-input::placeholder{ color: var(--text-tertiary); }
+  .subject-input:focus{ border-color: var(--accent); background: var(--bg-hover); }
+  .room-input{
+    padding: 5px 6px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  /* ---------- Priority Tasks ---------- */
+  .priority-task-list{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .priority-item{
+    border-left: 4px solid transparent;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  
+  .urgency-high {
+    border-left-color: var(--danger);
+    background: var(--danger-soft);
+  }
+  .urgency-medium {
+    border-left-color: var(--amber);
+    background: var(--amber-soft);
+  }
+  .urgency-normal {
+    border-left-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .urgency-low {
+    border-left-color: var(--success);
+    background: var(--success-soft);
+  }
+
+  .priority-date{
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: block;
+    opacity: 0.8;
+  }
+
+  /* ---------- Badges de tipos de entrega ---------- */
+  .type-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .type-examen {
+    background: rgba(240, 120, 138, 0.25);
+    color: var(--danger);
+    border: 1px solid rgba(240, 120, 138, 0.4);
+  }
+  .type-entrega {
+    background: rgba(242, 184, 75, 0.25);
+    color: var(--amber);
+    border: 1px solid rgba(242, 184, 75, 0.4);
+  }
+  .type-ejercicio {
+    background: rgba(74, 222, 128, 0.25);
+    color: var(--success);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+  }
+
+  /* ---------- Modal shared ---------- */
+  .modal-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .18s ease, visibility .18s ease;
+  }
+  .modal-overlay.open{ opacity: 1; visibility: visible; }
+
+  .modal{
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+    transform: translateY(10px) scale(.98);
+    transition: transform .18s ease;
+  }
+  .modal-overlay.open .modal{ transform: translateY(0) scale(1); }
+
+  #dayModal{ max-width: 440px; }
+  #campusModal{ max-width: 520px; }
+
+  .modal-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .modal-header h2{
+    font-size: 15.5px;
+    margin: 0;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  .modal-close{
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 15px;
+    cursor: pointer;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .modal-close:hover{ background: var(--bg-hover); color: var(--text); }
+
+  .modal-body{ padding: 16px 20px 20px; overflow-y: auto; }
+
+  /* ---------- Task items ---------- */
+  .task-list{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .task-item{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-elevated);
+    border: 1px solid transparent;
+  }
+  
+  #dayModal .task-item:hover{ border-color: var(--border); }
+
+  .task-row-top{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .task-checkbox{
+    width: 17px; height: 17px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .task-text{
+    flex: 1;
+    font-size: 13.5px;
+    word-break: break-word;
+    line-height: 1.4;
+  }
+  .task-item.done .task-text{
+    text-decoration: line-through;
+    color: var(--text-tertiary);
+  }
+
+  .task-delete{
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity .15s ease, color .15s ease;
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    border-radius: 5px;
+  }
+  .task-item:hover .task-delete{ opacity: 1; }
+  .task-delete:hover{ color: var(--danger); background: rgba(240,120,138,0.1); }
+
+  .task-meta{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  #dayModal .task-meta, #dayModal .task-notes {
+    margin-left: 27px;
+  }
+
+  .task-badge{
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--bg-hover);
+    color: var(--text);
+  }
+  .task-time-chip{
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.2);
+    color: var(--text);
+  }
+  .task-item.done .task-badge,
+  .task-item.done .task-time-chip,
+  .task-item.done .type-badge { opacity: .55; }
+
+  .task-notes{
+    font-size: 12px;
+    color: var(--text-tertiary);
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .empty-state{
+    color: var(--text-tertiary);
+    font-size: 13px;
+    text-align: center;
+    padding: 26px 10px;
+  }
+
+  .task-form{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .field{ display: flex; flex-direction: column; gap: 4px; }
+  .field label{
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  .task-form-row{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  #taskInput, #taskSubject, #taskTime, #taskNotes, #taskType{
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color .15s ease;
+  }
+  #taskType { cursor: pointer; }
+  #taskInput::placeholder, #taskSubject::placeholder, #taskNotes::placeholder{ color: var(--text-tertiary); }
+  #taskInput:focus, #taskSubject:focus, #taskTime:focus, #taskNotes:focus, #taskType:focus{ border-color: var(--accent); }
+
+  #taskTime{ padding: 10px 8px; color-scheme: dark; }
+  #taskTime::-webkit-calendar-picker-indicator{ filter: invert(1) brightness(1.6); cursor: pointer; }
+
+  .btn-primary{
+    width: 100%;
+    background: var(--accent);
+    color: #101014;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 11px 16px;
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    transition: filter .15s ease;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .btn-primary:hover{ filter: brightness(1.12); }
+
+  /* ---------- Campus Virtual List ---------- */
+  .campus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .campus-item {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .campus-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .campus-subject-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .campus-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    transition: background .15s ease;
+  }
+  .campus-link-btn:hover {
+    background: rgba(124,140,248,0.28);
+  }
+  .campus-url-input {
+    width: 100%;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+  }
+  .campus-url-input:focus {
+    border-color: var(--accent);
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px){
+    .dashboard-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px){
+    main{ padding: 0 12px 40px; }
+    .topbar{ padding: 12px 16px; }
+    .calendar-nav{ margin: 20px 0 14px; }
+    .month-title{ font-size: 17px; }
+    .day-cell{ min-height: 46px; padding: 5px; }
+    .day-num{ font-size: 11.5px; width: 20px; height: 20px; }
+    .calendar-card{ padding: 10px; }
+    .weekday-row span{ font-size: 9.5px; }
+    .schedule-table{ font-size: 10.5px; }
+    .time-cell{ font-size: 9px; }
+    .subject-input{ font-size: 10.5px; padding: 6px 3px; }
+    .room-input{ font-size: 9px; padding: 4px 3px; }
+    .task-form-row{ grid-template-columns: 1fr; }
+    .modal{ max-height: 92vh; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="drago10.gif" alt="">
+      <span>Calendario</span>
+    </div>
+    <div class="topbar-actions">
+      <div class="cloud-status">
+        <span class="status-dot" id="cloudDot"></span>
+        <span id="cloudStatusText">Conectando nube...</span>
+      </div>
+      <button class="text-btn" id="openCampusBtn">
+        🌐 Campus Virtual
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="next-class-banner" id="nextClassBanner">
+      <span class="next-class-icon">🔔</span>
+      <span class="next-class-text" id="nextClassText">Cargando horario...</span>
+    </div>
+
+    <section class="calendar-nav">
+      <div class="month-title" id="monthTitle">Mes Año</div>
+      <div class="nav-controls">
+        <div class="view-selector">
+          <button class="view-btn active" id="viewMonthBtn">Mes</button>
+          <button class="view-btn" id="viewWeekBtn">Semana</button>
+        </div>
+        <button class="text-btn" id="todayBtn">Hoy</button>
+        <button class="icon-btn" id="prevBtn" aria-label="Anterior">‹</button>
+        <button class="icon-btn" id="nextBtn" aria-label="Siguiente">›</button>
+      </div>
+    </section>
+
+    <section class="calendar-card">
+      <div class="weekday-row">
+        <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+      </div>
+      <div class="days-grid" id="daysGrid"></div>
+    </section>
+
+    <section class="dashboard-grid">
+      <div class="dashboard-card">
+        <h2>
+          <img src="reloj-arena.gif" alt="">
+          Horario
+        </h2>
+        <div class="table-responsive">
+          <table class="schedule-table">
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Lunes</th>
+                <th>Martes</th>
+                <th>Miércoles</th>
+                <th>Jueves</th>
+                <th>Viernes</th>
+              </tr>
+            </thead>
+            <tbody id="scheduleBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="dashboard-card">
+        <div class="card-header-flex">
+          <h2>
+            <img src="estrella-14.gif" alt="">
+            Tareas
+          </h2>
+          <select id="priorityFilter" class="task-filter-select">
+            <option value="all">Ver todas</option>
+            <option value="pending" selected>Solo pendientes</option>
+            <option value="examen">🔴 Exámenes</option>
+            <option value="entrega">🟡 Entregas</option>
+            <option value="ejercicio">🟢 Ejercicios</option>
+          </select>
+        </div>
+        <div class="priority-task-list" id="priorityTaskList"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="dayModalOverlay">
+    <div class="modal" id="dayModal">
+      <div class="modal-header">
+        <h2 id="dayModalTitle">Fecha</h2>
+        <button class="modal-close" id="dayModalClose" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="task-list" id="taskList"></div>
+        <div class="task-form">
+          <div class="field">
+            <label for="taskInput">Tarea</label>
+            <input type="text" id="taskInput" placeholder="¿Qué tienes que hacer?" maxlength="200">
+          </div>
+          <div class="task-form-row">
+            <div class="field">
+              <label for="taskType">Tipo de entrega</label>
+              <select id="taskType">
+                <option value="ninguno">Normal</option>
+                <option value="examen">🔴 Examen</option>
+                <option value="entrega">🟡 Entrega de Trabajo</option>
+                <option value="ejercicio">🟢 Ejercicio</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="taskSubject">Asignatura</label>
+              <input type="text" id="taskSubject" list="subjectDatalist" placeholder="Opcional" maxlength="40" autocomplete="off">
+              <datalist id="subjectDatalist"></datalist>
+            </div>
+          </div>
+          <div class="task-form-row">
+            <div class="field">
+              <label for="taskTime">Hora entrega</label>
+              <input type="time" id="taskTime">
+            </div>
+            <div class="field">
+              <label for="taskNotes">Notas</label>
+              <input type="text" id="taskNotes" placeholder="Opcional" maxlength="140">
+            </div>
+          </div>
+          <button class="btn-primary" id="addTaskBtn">Añadir tarea</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="campusModalOverlay">
+    <div class="modal" id="campusModal">
+      <div class="modal-header">
+        <h2>Catálogo de Asignaturas & Campus Virtual</h2>
+        <button class="modal-close" id="campusModalClose" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 12.5px; color: var(--text-secondary); margin-top: 0; margin-bottom: 16px;">
+          Guarda aquí los enlaces de tu Campus Virtual para cada asignatura de tu horario.
+        </p>
+        <div class="campus-list" id="campusList"></div>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBNyIn52mAtq8pP-M7e-9hQj0v4aHh1LBo",
+    authDomain: "micalendario-c2153.firebaseapp.com",
+    projectId: "micalendario-c2153",
+    storageBucket: "micalendario-c2153.firebasestorage.app",
+    messagingSenderId: "1098695844426",
+    appId: "1:1098695844426:web:6e6f437c3ed03f7e0edec2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Cache Local en memoria
+  window.cloudData = {
+    tasks: {},
+    schedule: {},
+    campus: {}
+  };
+
+  const docRef = doc(db, "app_data", "mi_calendario");
+
+  // Escuchar la base de datos en Tiempo Real
+  onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      window.cloudData.tasks = data.tasks || {};
+      window.cloudData.schedule = data.schedule || {};
+      window.cloudData.campus = data.campus || {};
+    }
+    
+    document.getElementById("cloudDot").classList.add("online");
+    document.getElementById("cloudStatusText").textContent = "Sincronizado";
+
+    // Actualizar la interfaz automáticamente
+    if (window.appMethods) {
+      window.appMethods.loadScheduleInputs();
+      window.appMethods.renderCalendar();
+      window.appMethods.renderPriorityTasks();
+      window.appMethods.updateNextClassAlert();
+      if (window.appMethods.isModalOpen()) {
+        window.appMethods.renderTaskList();
+      }
+    }
+  }, (error) => {
+    console.error("Error en conexión nube:", error);
+    document.getElementById("cloudStatusText").textContent = "Error de red";
+  });
+
+  // Función global para guardar datos en la nube
+  window.syncToCloud = async function() {
+    try {
+      await setDoc(docRef, window.cloudData);
+    } catch (e) {
+      console.error("Error al guardar en Firebase:", e);
+    }
+  };
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  var today = new Date();
+  var viewYear = today.getFullYear();
+  var viewMonth = today.getMonth();
+  var currentMode = "month";
+  var selectedWeekDate = new Date(today);
+  var selectedDateKey = null;
+
+  var MONTH_NAMES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+  var PERIODS = [
+    { start: "08:15", end: "09:45" },
+    { start: "09:45", end: "11:15" },
+    { start: "11:35", end: "13:05" },
+    { start: "13:05", end: "14:35" },
+    { recess: true, label: "Comida" },
+    { start: "16:00", end: "17:30" },
+    { start: "17:30", end: "19:00" }
+  ];
+  var DAYS = [
+    { key: "mon", label: "Lunes", dayIndex: 1 },
+    { key: "tue", label: "Martes", dayIndex: 2 },
+    { key: "wed", label: "Miércoles", dayIndex: 3 },
+    { key: "thu", label: "Jueves", dayIndex: 4 },
+    { key: "fri", label: "Viernes", dayIndex: 5 }
+  ];
+
+  var CLOCK_SVG = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7V12L15.5 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+  function pad(n){ return String(n).padStart(2, "0"); }
+  function dateKey(y, m, d){ return y + "-" + pad(m + 1) + "-" + pad(d); }
+
+  function timeToMinutes(tStr) {
+    if(!tStr) return -1;
+    var parts = tStr.split(":");
+    return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  }
+
+  function getTasks(){ return window.cloudData ? window.cloudData.tasks : {}; }
+  function getSchedule(){ return window.cloudData ? window.cloudData.schedule : {}; }
+  function getCampusLinks(){ return window.cloudData ? window.cloudData.campus : {}; }
+
+  function escapeHtml(str){
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function uid(){
+    return "t" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function formatFriendlyDate(dateStr) {
+    var parts = dateStr.split("-");
+    var d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  }
+
+  function getTypeBadgeHtml(type) {
+    if (type === "examen") return '<span class="type-badge type-examen">Examen</span>';
+    if (type === "entrega") return '<span class="type-badge type-entrega">Entrega</span>';
+    if (type === "ejercicio") return '<span class="type-badge type-ejercicio">Ejercicio</span>';
+    return '';
+  }
+
+  function updateNextClassAlert() {
+    var now = new Date();
+    var dayOfWeek = now.getDay();
+    var currentMins = now.getHours() * 60 + now.getMinutes();
+    var bannerText = document.getElementById("nextClassText");
+
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      bannerText.innerHTML = "¡Buen fin de semana! No tienes clases programadas para hoy.";
+      return;
+    }
+
+    var dayKey = DAYS[dayOfWeek - 1].key;
+    var scheduleData = getSchedule();
+
+    var currentClass = null;
+    var nextClass = null;
+
+    PERIODS.forEach(function(p, idx) {
+      if (p.recess) return;
+      var subj = (scheduleData[dayKey + "-" + idx + "-subj"] || "").trim();
+      var room = (scheduleData[dayKey + "-" + idx + "-room"] || "").trim();
+      
+      if (!subj) return;
+
+      var startMins = timeToMinutes(p.start);
+      var endMins = timeToMinutes(p.end);
+
+      if (currentMins >= startMins && currentMins < endMins) {
+        currentClass = { subject: subj, room: room, end: p.end };
+      } else if (currentMins < startMins && !nextClass) {
+        nextClass = { subject: subj, room: room, start: p.start };
+      }
+    });
+
+    if (currentClass) {
+      var roomInfo = currentClass.room ? " en " + escapeHtml(currentClass.room) : "";
+      bannerText.innerHTML = "En clase ahora: <strong>" + escapeHtml(currentClass.subject) + "</strong>" + roomInfo + " (hasta las " + currentClass.end + ")";
+    } else if (nextClass) {
+      var roomInfo = nextClass.room ? " en " + escapeHtml(nextClass.room) : "";
+      bannerText.innerHTML = "Próxima clase hoy: <strong>" + escapeHtml(nextClass.subject) + "</strong>" + roomInfo + " a las <strong>" + nextClass.start + "</strong>";
+    } else {
+      bannerText.innerHTML = "Has terminado todas tus clases de hoy. ¡Buen trabajo!";
+    }
+  }
+
+  function renderCalendar(){
+    var grid = document.getElementById("daysGrid");
+    grid.innerHTML = "";
+
+    var tasks = getTasks();
+    var todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+    var frag = document.createDocumentFragment();
+
+    if (currentMode === "month") {
+      var firstDay = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
+      var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      var daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+      var totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+      for(var i = 0; i < totalCells; i++){
+        var cellDay, cellMonth, cellYear, otherMonth = false;
+
+        if(i < firstDay){
+          cellDay = daysInPrevMonth - firstDay + i + 1;
+          cellMonth = viewMonth - 1;
+          cellYear = viewYear;
+          otherMonth = true;
+        }else if(i >= firstDay + daysInMonth){
+          cellDay = i - (firstDay + daysInMonth) + 1;
+          cellMonth = viewMonth + 1;
+          cellYear = viewYear;
+          otherMonth = true;
+        }else{
+          cellDay = i - firstDay + 1;
+          cellMonth = viewMonth;
+          cellYear = viewYear;
+        }
+
+        var normMonth = cellMonth, normYear = cellYear;
+        if(normMonth < 0){ normMonth = 11; normYear -= 1; }
+        if(normMonth > 11){ normMonth = 0; normYear += 1; }
+
+        var key = dateKey(normYear, normMonth, cellDay);
+        appendDayCell(frag, key, cellDay, otherMonth, todayKey, tasks);
+      }
+
+      document.getElementById("monthTitle").textContent = MONTH_NAMES[viewMonth] + " " + viewYear;
+    } else {
+      var current = new Date(selectedWeekDate);
+      var dayOfWeek = (current.getDay() + 6) % 7;
+      current.setDate(current.getDate() - dayOfWeek);
+
+      var weekStart = new Date(current);
+      var weekEnd = new Date(current);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      for(var w = 0; w < 7; w++){
+        var k = dateKey(current.getFullYear(), current.getMonth(), current.getDate());
+        var isOtherMonth = current.getMonth() !== viewMonth;
+        appendDayCell(frag, k, current.getDate(), isOtherMonth, todayKey, tasks);
+        current.setDate(current.getDate() + 1);
+      }
+
+      var weekTitle = "Semana del " + weekStart.getDate() + " " + MONTH_NAMES[weekStart.getMonth()].slice(0,3);
+      if (weekStart.getMonth() !== weekEnd.getMonth()) {
+        weekTitle += " - " + weekEnd.getDate() + " " + MONTH_NAMES[weekEnd.getMonth()].slice(0,3);
+      }
+      document.getElementById("monthTitle").textContent = weekTitle;
+    }
+
+    grid.appendChild(frag);
+  }
+
+  function appendDayCell(frag, key, cellDay, otherMonth, todayKey, tasks) {
+    var dayTasks = tasks[key] || [];
+    var pendingCount = dayTasks.filter(function(t){ return !t.done; }).length;
+    var hasOnlyDone = dayTasks.length > 0 && pendingCount === 0;
+
+    var cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "day-cell" + (otherMonth ? " other-month" : "") + (key === todayKey ? " is-today" : "");
+    cell.setAttribute("data-date", key);
+
+    var dotHtml = "";
+    if(pendingCount > 0){
+      dotHtml = '<span class="task-dot pending"></span>';
+    }else if(hasOnlyDone){
+      dotHtml = '<span class="task-dot done"></span>';
+    }
+
+    cell.innerHTML = '<span class="day-num">' + cellDay + '</span>' + dotHtml;
+    cell.addEventListener("click", function(){ openDayModal(key); });
+
+    frag.appendChild(cell);
+  }
+
+  function renderPriorityTasks(){
+    var tasksDict = getTasks();
+    var filterValue = document.getElementById("priorityFilter").value;
+    var allTasks = [];
+    var now = new Date();
+    var todayStr = dateKey(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    var tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    var tomorrowStr = dateKey(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+
+    Object.keys(tasksDict).forEach(function(date) {
+      tasksDict[date].forEach(function(t) {
+        var match = false;
+        if (filterValue === "all") match = true;
+        else if (filterValue === "pending" && !t.done) match = true;
+        else if (filterValue === t.type) match = true;
+
+        if (match) {
+          allTasks.push({ date: date, task: t });
+        }
+      });
+    });
+
+    allTasks.sort(function(a, b) {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      var timeA = a.task.time || "23:59";
+      var timeB = b.task.time || "23:59";
+      return timeA.localeCompare(timeB);
+    });
+
+    var container = document.getElementById("priorityTaskList");
+    
+    if (allTasks.length === 0) {
+      container.innerHTML = '<p class="empty-state">No hay tareas que coincidan con el filtro seleccionado.</p>';
+      return;
+    }
+
+    var html = allTasks.slice(0, 10).map(function(item) {
+      var t = item.task;
+      
+      var urgencyClass = "urgency-low";
+      if (t.done) urgencyClass = "urgency-low";
+      else if (item.date < todayStr) urgencyClass = "urgency-high";
+      else if (item.date === todayStr) urgencyClass = "urgency-medium";
+      else if (item.date === tomorrowStr) urgencyClass = "urgency-normal";
+
+      var metaParts = getTypeBadgeHtml(t.type);
+      if(t.subject){ metaParts += '<span class="task-badge">' + escapeHtml(t.subject) + '</span>'; }
+      if(t.time){ metaParts += '<span class="task-time-chip">' + CLOCK_SVG + escapeHtml(t.time) + '</span>'; }
+      var metaHtml = metaParts ? '<div class="task-meta">' + metaParts + '</div>' : "";
+
+      return '<div class="task-item priority-item ' + urgencyClass + '" onclick="document.querySelector(\'.day-cell[data-date=\\\'\' + \'' + item.date + '\' + \'\\\']\').click()">' +
+             '<span class="priority-date">Para el ' + formatFriendlyDate(item.date) + '</span>' +
+             '<div class="task-row-top" style="margin-bottom: 4px;">' +
+             '<span class="task-text" style="font-weight: 600;' + (t.done ? 'text-decoration:line-through;opacity:0.6;' : '') + '">' + escapeHtml(t.text) + '</span>' +
+             '</div>' + metaHtml + 
+             '</div>';
+    }).join("");
+
+    container.innerHTML = html;
+  }
+
+  function openDayModal(key){
+    selectedDateKey = key;
+    var parts = key.split("-").map(Number);
+    var dObj = new Date(parts[0], parts[1] - 1, parts[2]);
+    var label = dObj.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    label = label.charAt(0).toUpperCase() + label.slice(1);
+
+    document.getElementById("dayModalTitle").textContent = label;
+    document.getElementById("taskInput").value = "";
+    document.getElementById("taskType").value = "ninguno";
+    document.getElementById("taskSubject").value = "";
+    document.getElementById("taskTime").value = "";
+    document.getElementById("taskNotes").value = "";
+    populateSubjectDatalist();
+    renderTaskList();
+
+    var overlay = document.getElementById("dayModalOverlay");
+    overlay.classList.add("open");
+    setTimeout(function(){ document.getElementById("taskInput").focus(); }, 50);
+  }
+
+  function closeDayModal(){
+    document.getElementById("dayModalOverlay").classList.remove("open");
+    selectedDateKey = null;
+  }
+
+  function renderTaskList(){
+    if (!selectedDateKey) return;
+    var tasks = getTasks();
+    var list = tasks[selectedDateKey] || [];
+    var container = document.getElementById("taskList");
+
+    if(list.length === 0){
+      container.innerHTML = '<p class="empty-state">No hay tareas para este día.<br>Añade la primera abajo.</p>';
+      return;
+    }
+
+    var html = list.map(function(t){
+      var metaParts = getTypeBadgeHtml(t.type);
+      if(t.subject){ metaParts += '<span class="task-badge">' + escapeHtml(t.subject) + '</span>'; }
+      if(t.time){ metaParts += '<span class="task-time-chip">' + CLOCK_SVG + escapeHtml(t.time) + '</span>'; }
+      var metaHtml = metaParts ? '<div class="task-meta">' + metaParts + '</div>' : "";
+      var notesHtml = t.notes ? '<div class="task-notes">' + escapeHtml(t.notes) + '</div>' : "";
+
+      return '<div class="task-item ' + (t.done ? "done" : "") + '" data-id="' + t.id + '">' +
+        '<div class="task-row-top">' +
+        '<input type="checkbox" class="task-checkbox" data-action="toggle" data-id="' + t.id + '" ' + (t.done ? "checked" : "") + '>' +
+        '<span class="task-text">' + escapeHtml(t.text) + '</span>' +
+        '<button class="task-delete" data-action="delete" data-id="' + t.id + '" aria-label="Eliminar tarea">✕</button>' +
+        '</div>' +
+        metaHtml +
+        notesHtml +
+        '</div>';
+    }).join("");
+
+    container.innerHTML = html;
+  }
+
+  function addTask(){
+    var textEl = document.getElementById("taskInput");
+    var typeEl = document.getElementById("taskType");
+    var subjectEl = document.getElementById("taskSubject");
+    var timeEl = document.getElementById("taskTime");
+    var notesEl = document.getElementById("taskNotes");
+
+    var text = (textEl.value || "").trim();
+    if(!text || !selectedDateKey) return;
+
+    var tasks = getTasks();
+    if(!tasks[selectedDateKey]) tasks[selectedDateKey] = [];
+    tasks[selectedDateKey].push({
+      id: uid(),
+      text: text,
+      type: typeEl.value || "ninguno",
+      done: false,
+      subject: (subjectEl.value || "").trim(),
+      time: timeEl.value || "",
+      notes: (notesEl.value || "").trim()
+    });
+    
+    window.cloudData.tasks = tasks;
+    if (window.syncToCloud) window.syncToCloud();
+
+    textEl.value = "";
+    typeEl.value = "ninguno";
+    subjectEl.value = "";
+    timeEl.value = "";
+    notesEl.value = "";
+
+    renderTaskList();
+    renderCalendar();
+    renderPriorityTasks();
+    textEl.focus();
+  }
+
+  function toggleTask(id){
+    if(!selectedDateKey) return;
+    var tasks = getTasks();
+    var list = tasks[selectedDateKey] || [];
+    for(var i = 0; i < list.length; i++){
+      if(list[i].id === id){ list[i].done = !list[i].done; break; }
+    }
+    window.cloudData.tasks = tasks;
+    if (window.syncToCloud) window.syncToCloud();
+
+    renderTaskList();
+    renderCalendar();
+    renderPriorityTasks();
+  }
+
+  function deleteTask(id){
+    if(!selectedDateKey) return;
+    var tasks = getTasks();
+    var list = tasks[selectedDateKey] || [];
+    tasks[selectedDateKey] = list.filter(function(t){ return t.id !== id; });
+    if(tasks[selectedDateKey].length === 0) delete tasks[selectedDateKey];
+    
+    window.cloudData.tasks = tasks;
+    if (window.syncToCloud) window.syncToCloud();
+
+    renderTaskList();
+    renderCalendar();
+    renderPriorityTasks();
+  }
+
+  function openCampusModal(){
+    renderCampusList();
+    document.getElementById("campusModalOverlay").classList.add("open");
+  }
+
+  function closeCampusModal(){
+    document.getElementById("campusModalOverlay").classList.remove("open");
+  }
+
+  function renderCampusList(){
+    var subjects = getScheduleSubjects();
+    var links = getCampusLinks();
+    var container = document.getElementById("campusList");
+
+    if (subjects.length === 0) {
+      container.innerHTML = '<p class="empty-state">Añade asignaturas en tu Horario para poder gestionar sus enlaces al Campus Virtual.</p>';
+      return;
+    }
+
+    var html = subjects.map(function(sub){
+      var currentUrl = links[sub] || "";
+      var validUrl = currentUrl;
+      if (validUrl && !/^https?:\/\//i.test(validUrl)) {
+        validUrl = 'https://' + validUrl;
+      }
+
+      var linkBtnHtml = validUrl 
+        ? '<a href="' + escapeHtml(validUrl) + '" target="_blank" rel="noopener noreferrer" class="campus-link-btn">Ir al Campus ↗</a>'
+        : '';
+
+      return '<div class="campus-item">' +
+        '<div class="campus-item-header">' +
+        '<span class="campus-subject-name">' + escapeHtml(sub) + '</span>' +
+        linkBtnHtml +
+        '</div>' +
+        '<input type="url" class="campus-url-input" data-subject="' + escapeHtml(sub) + '" placeholder="Pega aquí el enlace del Campus Virtual (https://...)" value="' + escapeHtml(currentUrl) + '">' +
+        '</div>';
+    }).join("");
+
+    container.innerHTML = html;
+  }
+
+  function buildScheduleTable(){
+    var tbody = document.getElementById("scheduleBody");
+    var html = "";
+
+    var now = new Date();
+    var currentDay = now.getDay();
+    var currentMins = now.getHours() * 60 + now.getMinutes();
+
+    PERIODS.forEach(function(p, idx){
+      if(p.recess){
+        var timeText = (p.start && p.end) ? (p.start + " - " + p.end) : "";
+        html += '<tr class="recess-row"><td class="time-cell">' + timeText + '</td><td colspan="5">' + (p.label || "Recreo") + '</td></tr>';
+      }else{
+        var startMins = timeToMinutes(p.start);
+        var endMins = timeToMinutes(p.end);
+        var isCurrentPeriod = (currentMins >= startMins && currentMins < endMins);
+
+        var row = '<tr><td class="time-cell">' + p.start + ' - ' + p.end + '</td>';
+        DAYS.forEach(function(d){
+          var isCurrentCell = isCurrentPeriod && (currentDay === d.dayIndex);
+          var activeClass = isCurrentCell ? " current-class" : "";
+
+          row += '<td><div class="subject-cell' + activeClass + '">' +
+            '<input type="text" class="subject-input" data-key="' + d.key + '-' + idx + '-subj" placeholder="Asignatura" maxlength="40">' +
+            '<input type="text" class="subject-input room-input" data-key="' + d.key + '-' + idx + '-room" placeholder="Aula" maxlength="20">' +
+            '</div></td>';
+        });
+        row += "</tr>";
+        html += row;
+      }
+    });
+
+    tbody.innerHTML = html;
+  }
+
+  function loadScheduleIntoInputs(){
+    var data = getSchedule();
+    var inputs = document.querySelectorAll(".subject-input");
+    inputs.forEach(function(inp){
+      var key = inp.getAttribute("data-key");
+      inp.value = data[key] || "";
+    });
+  }
+
+  function getScheduleSubjects(){
+    var data = getSchedule();
+    var seen = {};
+    var subjects = [];
+    Object.keys(data).forEach(function(key){
+      if(key.slice(-5) === "-subj"){
+        var val = (data[key] || "").trim();
+        if(val && !seen[val]){
+          seen[val] = true;
+          subjects.push(val);
+        }
+      }
+    });
+    subjects.sort(function(a, b){ return a.localeCompare(b, "es"); });
+    return subjects;
+  }
+
+  function populateSubjectDatalist(){
+    var datalist = document.getElementById("subjectDatalist");
+    var subjects = getScheduleSubjects();
+    datalist.innerHTML = subjects.map(function(s){
+      return '<option value="' + escapeHtml(s) + '"></option>';
+    }).join("");
+  }
+
+  // Exportar métodos para sincronización con Firebase
+  window.appMethods = {
+    renderCalendar: renderCalendar,
+    renderPriorityTasks: renderPriorityTasks,
+    renderTaskList: renderTaskList,
+    loadScheduleInputs: loadScheduleIntoInputs,
+    updateNextClassAlert: updateNextClassAlert,
+    isModalOpen: function(){ return selectedDateKey !== null; }
+  };
+
+  function init(){
+    buildScheduleTable();
+    loadScheduleIntoInputs();
+    renderCalendar();
+    renderPriorityTasks();
+    updateNextClassAlert();
+
+    setInterval(function(){
+      buildScheduleTable();
+      loadScheduleIntoInputs();
+      updateNextClassAlert();
+    }, 60000);
+
+    document.getElementById("viewMonthBtn").addEventListener("click", function(){
+      currentMode = "month";
+      this.classList.add("active");
+      document.getElementById("viewWeekBtn").classList.remove("active");
+      renderCalendar();
+    });
+
+    document.getElementById("viewWeekBtn").addEventListener("click", function(){
+      currentMode = "week";
+      this.classList.add("active");
+      document.getElementById("viewMonthBtn").classList.remove("active");
+      renderCalendar();
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", function(){
+      if (currentMode === "month") {
+        viewMonth--;
+        if(viewMonth < 0){ viewMonth = 11; viewYear--; }
+      } else {
+        selectedWeekDate.setDate(selectedWeekDate.getDate() - 7);
+        viewMonth = selectedWeekDate.getMonth();
+        viewYear = selectedWeekDate.getFullYear();
+      }
+      renderCalendar();
+    });
+
+    document.getElementById("nextBtn").addEventListener("click", function(){
+      if (currentMode === "month") {
+        viewMonth++;
+        if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+      } else {
+        selectedWeekDate.setDate(selectedWeekDate.getDate() + 7);
+        viewMonth = selectedWeekDate.getMonth();
+        viewYear = selectedWeekDate.getFullYear();
+      }
+      renderCalendar();
+    });
+
+    document.getElementById("todayBtn").addEventListener("click", function(){
+      viewYear = today.getFullYear();
+      viewMonth = today.getMonth();
+      selectedWeekDate = new Date(today);
+      renderCalendar();
+    });
+
+    document.getElementById("priorityFilter").addEventListener("change", function(){
+      renderPriorityTasks();
+    });
+
+    document.getElementById("dayModalClose").addEventListener("click", closeDayModal);
+    document.getElementById("dayModalOverlay").addEventListener("click", function(e){
+      if(e.target === this) closeDayModal();
+    });
+
+    document.getElementById("openCampusBtn").addEventListener("click", openCampusModal);
+    document.getElementById("campusModalClose").addEventListener("click", closeCampusModal);
+    document.getElementById("campusModalOverlay").addEventListener("click", function(e){
+      if(e.target === this) closeCampusModal();
+    });
+
+    document.getElementById("campusList").addEventListener("input", function(e){
+      if(e.target.matches(".campus-url-input")){
+        var subject = e.target.getAttribute("data-subject");
+        var links = getCampusLinks();
+        links[subject] = e.target.value.trim();
+        window.cloudData.campus = links;
+        if (window.syncToCloud) window.syncToCloud();
+
+        var item = e.target.closest(".campus-item");
+        var linkBtn = item.querySelector(".campus-link-btn");
+        var validUrl = e.target.value.trim();
+        if (validUrl && !/^https?:\/\//i.test(validUrl)) {
+          validUrl = 'https://' + validUrl;
+        }
+
+        if (validUrl) {
+          if (!linkBtn) {
+            var header = item.querySelector(".campus-item-header");
+            linkBtn = document.createElement("a");
+            linkBtn.className = "campus-link-btn";
+            linkBtn.target = "_blank";
+            linkBtn.rel = "noopener noreferrer";
+            linkBtn.textContent = "Ir al Campus ↗";
+            header.appendChild(linkBtn);
+          }
+          linkBtn.href = validUrl;
+        } else if (linkBtn) {
+          linkBtn.remove();
+        }
+      }
+    });
+
+    document.getElementById("addTaskBtn").addEventListener("click", function(){
+      addTask();
+    });
+    document.getElementById("dayModal").addEventListener("keydown", function(e){
+      if(e.key !== "Enter") return;
+      var id = e.target.id;
+      if(id === "taskInput" || id === "taskSubject" || id === "taskTime" || id === "taskNotes"){
+        e.preventDefault();
+        addTask();
+      }
+    });
+
+    document.getElementById("taskList").addEventListener("click", function(e){
+      var btn = e.target.closest("[data-action='delete']");
+      if(btn) deleteTask(btn.getAttribute("data-id"));
+    });
+    document.getElementById("taskList").addEventListener("change", function(e){
+      if(e.target.matches("input[type='checkbox'][data-action='toggle']")){
+        toggleTask(e.target.getAttribute("data-id"));
+      }
+    });
+
+    document.getElementById("scheduleBody").addEventListener("input", function(e){
+      if(e.target.matches(".subject-input")){
+        var data = getSchedule();
+        data[e.target.getAttribute("data-key")] = e.target.value;
+        window.cloudData.schedule = data;
+        if (window.syncToCloud) window.syncToCloud();
+        updateNextClassAlert();
+      }
+    });
+
+    document.addEventListener("keydown", function(e){
+      if(e.key === "Escape"){
+        closeDayModal();
+        closeCampusModal();
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
